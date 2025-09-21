@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công cụ Chuyển văn bản thành Giọng nói</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar styles */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        .highlight {
+            background-color: #fef08a; /* yellow-200 */
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        #file-upload-button { cursor: pointer; }
+        
+        /* Custom Range Slider Styles */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type=range]:focus { outline: none; }
+        
+        input[type=range]::-webkit-slider-runnable-track {
+            height: 6px;
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            margin-top: -5px;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #3b82f6;
+        }
+        input[type=range]::-moz-range-track {
+            height: 6px;
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+        input[type=range]::-moz-range-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #3b82f6;
+            border: none;
+        }
+        
+        /* Lookup Popup */
+        #lookup-popup {
+            position: absolute;
+            display: none;
+            z-index: 1000;
+            padding: 8px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            transition: opacity 0.2s ease;
+            display: flex;
+            gap: 8px;
+        }
+        #lookup-popup a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #f3f4f6;
+        }
+        #lookup-popup a:hover {
+            background-color: #e5e7eb;
+        }
+        #lookup-popup svg {
+            width: 18px;
+            height: 18px;
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div id="lookup-popup">
+        <a id="lookup-google-translate" href="#" target="_blank" title="Tra trên Google Dịch"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" /></svg></a>
+        <a id="lookup-google-search" href="#" target="_blank" title="Tìm trên Google"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg></a>
+        <a id="lookup-vtudien-en" href="#" target="_blank" title="Tra từ điển Anh-Việt (Vtudien)"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg></a>
+        <a id="lookup-vtudien-ru" href="#" target="_blank" title="Tra từ điển Nga-Việt (Vtudien)"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg></a>
+        <a id="lookup-vtudien-zh" href="#" target="_blank" title="Tra từ điển Trung-Việt (Vtudien)"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg></a>
+    </div>
+
+    <div class="w-full max-w-4xl bg-white rounded-2xl shadow-lg p-6 md:p-8 space-y-6">
+        <div class="text-center">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Trình Đọc Văn Bản AI</h1>
+            <p class="text-gray-500 mt-2">Tải file văn bản (.txt), chọn giọng đọc và lắng nghe.</p>
+        </div>
+
+        <div id="upload-section">
+            <label for="file-upload" id="file-upload-button" class="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                    <svg class="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                    <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Nhấn để tải file lên</span> hoặc kéo thả</p>
+                    <p class="text-xs text-gray-500">Chỉ hỗ trợ file .TXT</p>
+                </div>
+                <input id="file-upload" type="file" class="hidden" accept=".txt">
+            </label>
+        </div>
+        
+        <div id="reader-ui" class="hidden space-y-4">
+            <div id="text-content" class="h-80 overflow-y-auto p-4 border rounded-lg bg-gray-50 text-gray-700 leading-relaxed scroll-smooth"></div>
+
+            <div class="bg-gray-100 p-4 rounded-lg space-y-5">
+                <div class="flex items-center gap-3">
+                    <span id="current-time" class="text-xs text-gray-600 font-mono">00:00</span>
+                    <input type="range" id="progress-bar" min="0" max="100" value="0" class="w-full">
+                    <span id="total-time" class="text-xs text-gray-600 font-mono">00:00</span>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-2">
+                        <button id="rewind-30-btn" class="p-2 text-gray-600 rounded-full hover:bg-gray-200 transition-colors disabled:text-gray-400 disabled:cursor-not-allowed" disabled title="Tua lại 30s">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
+                        </button>
+                        <button id="rewind-10-btn" class="p-2 text-gray-600 rounded-full hover:bg-gray-200 transition-colors disabled:text-gray-400 disabled:cursor-not-allowed" disabled title="Tua lại 10s">
+                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        </button>
+                        <button id="play-pause-btn" class="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors shadow-md disabled:bg-gray-300" disabled>
+                            <svg id="play-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                            <svg id="pause-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                        </button>
+                        <button id="forward-10-btn" class="p-2 text-gray-600 rounded-full hover:bg-gray-200 transition-colors disabled:text-gray-400 disabled:cursor-not-allowed" disabled title="Tua tới 10s">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+                        <button id="forward-30-btn" class="p-2 text-gray-600 rounded-full hover:bg-gray-200 transition-colors disabled:text-gray-400 disabled:cursor-not-allowed" disabled title="Tua tới 30s">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+                        </button>
+                        <button id="stop-btn" class="p-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-md disabled:bg-gray-300" disabled>
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"></path></svg>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <label for="rate-slider" class="text-sm font-medium text-gray-700">Tốc độ:</label>
+                        <input id="rate-slider" type="range" min="0.5" max="2" value="1" step="0.1" class="w-24">
+                        <span id="rate-label" class="text-sm text-gray-600 font-mono w-10">1.0x</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-2 min-w-0">
+                         <label for="language-select" class="text-sm font-medium text-gray-700 flex-shrink-0">Ngôn ngữ:</label>
+                         <select id="language-select" class="w-full max-w-[180px] rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition"></select>
+                    </div>
+                    <div class="flex items-center gap-2 min-w-0">
+                        <label for="voice-select" class="text-sm font-medium text-gray-700 flex-shrink-0">Giọng đọc:</label>
+                        <select id="voice-select" class="w-full max-w-[180px] truncate rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition"></select>
+                   </div>
+                </div>
+            </div>
+
+            <!-- Download Section -->
+            <div class="bg-gray-100 p-4 rounded-lg space-y-3">
+                <h3 class="font-semibold text-gray-700 text-center">Tải xuống âm thanh (MP3)</h3>
+                <p class="text-xs text-center text-gray-500">Trình duyệt sẽ yêu cầu quyền chia sẻ âm thanh của tab.</p>
+                <div class="flex justify-center gap-4">
+                     <button id="record-btn" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-md disabled:bg-gray-300" disabled>1. Bắt đầu Ghi</button>
+                     <button id="download-btn" class="px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed shadow-md" disabled>2. Dừng & Tải xuống</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const fileUpload = document.getElementById('file-upload'), uploadSection = document.getElementById('upload-section'), readerUI = document.getElementById('reader-ui'), textContentDiv = document.getElementById('text-content'), playPauseBtn = document.getElementById('play-pause-btn'), stopBtn = document.getElementById('stop-btn'), rewind10Btn = document.getElementById('rewind-10-btn'), rewind30Btn = document.getElementById('rewind-30-btn'), forward10Btn = document.getElementById('forward-10-btn'), forward30Btn = document.getElementById('forward-30-btn'), languageSelect = document.getElementById('language-select'), voiceSelect = document.getElementById('voice-select'), rateSlider = document.getElementById('rate-slider'), rateLabel = document.getElementById('rate-label'), progressBar = document.getElementById('progress-bar'), currentTimeEl = document.getElementById('current-time'), totalTimeEl = document.getElementById('total-time'), playIcon = document.getElementById('play-icon'), pauseIcon = document.getElementById('pause-icon'), recordBtn = document.getElementById('record-btn'), downloadBtn = document.getElementById('download-btn');
+            
+            // Lookup Popup Elements
+            const lookupPopup = document.getElementById('lookup-popup');
+            const lookupGoogleTranslate = document.getElementById('lookup-google-translate');
+            const lookupGoogleSearch = document.getElementById('lookup-google-search');
+            const lookupVtudienEn = document.getElementById('lookup-vtudien-en');
+            const lookupVtudienRu = document.getElementById('lookup-vtudien-ru');
+            const lookupVtudienZh = document.getElementById('lookup-vtudien-zh');
+
+            // State variables
+            let fullText = '', sentences = [], currentSentenceIndex = 0, voices = [], currentUtterance = null, estimatedDuration = 0, progressInterval, mediaRecorder, audioChunks = [];
+            const synth = window.speechSynthesis;
+
+            const targetLanguages = { 'vi-VN': 'Tiếng Việt', 'en-US': 'Tiếng Anh (Mỹ)', 'en-GB': 'Tiếng Anh (Anh)', 'ru-RU': 'Tiếng Nga', 'zh-CN': 'Tiếng Trung (Giản thể)' };
+
+            function populateVoiceList() {
+                voices = synth.getVoices().sort((a, b) => a.lang.localeCompare(b.lang));
+                const availableLangs = new Set();
+                voices.forEach(voice => targetLanguages[voice.lang] && availableLangs.add(voice.lang));
+
+                languageSelect.innerHTML = '';
+                availableLangs.forEach(langCode => {
+                    const option = document.createElement('option');
+                    option.textContent = targetLanguages[langCode];
+                    option.value = langCode;
+                    languageSelect.appendChild(option);
+                });
+                
+                updateVoiceOptions();
+            }
+
+            function updateVoiceOptions() {
+                const selectedLang = languageSelect.value;
+                voiceSelect.innerHTML = '';
+                voices.filter(voice => voice.lang === selectedLang).forEach(voice => {
+                    const option = document.createElement('option');
+                    option.textContent = `${voice.name}`; // Shortened name
+                    option.title = `${voice.name} (${voice.lang})`; // Full name on hover
+                    option.setAttribute('data-name', voice.name);
+                    voiceSelect.appendChild(option);
+                });
+            }
+
+            populateVoiceList();
+            if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = populateVoiceList;
+            languageSelect.addEventListener('change', updateVoiceOptions);
+
+            fileUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file && file.type === 'text/plain') {
+                    const reader = new FileReader();
+                    reader.onload = (re) => {
+                        fullText = re.target.result;
+                        displayAndPrepareText(fullText);
+                        uploadSection.classList.add('hidden');
+                        readerUI.classList.remove('hidden');
+                        playPauseBtn.disabled = false;
+                        stopBtn.disabled = false;
+                        rewind10Btn.disabled = false;
+                        rewind30Btn.disabled = false;
+                        forward10Btn.disabled = false;
+                        forward30Btn.disabled = false;
+                        recordBtn.disabled = false; // Enable record button
+                    };
+                    reader.readAsText(file);
+                } else alert('Vui lòng chỉ tải lên file có định dạng .txt');
+            });
+
+            function displayAndPrepareText(text) {
+                // Ensure paragraphs end with punctuation for better pausing
+                const processedText = text.replace(/([^\n.!?])(\n\s*\n)/g, '$1.$2');
+                textContentDiv.innerHTML = '';
+                sentences = processedText.match(/[^.!?]+[.!?]*|[^.!?\n]+$/g) || [];
+                sentences.forEach((sentence, index) => {
+                    const span = document.createElement('span');
+                    span.textContent = sentence;
+                    span.id = `sentence-${index}`;
+                    textContentDiv.appendChild(span);
+                    textContentDiv.appendChild(document.createTextNode(' '));
+                });
+                const wordCount = fullText.split(/\s+/).length;
+                estimatedDuration = (wordCount / 150) * 60; // 150 WPM average
+                totalTimeEl.textContent = formatTime(estimatedDuration);
+            }
+            
+            function speakFrom(index) {
+                if (synth.speaking) synth.cancel();
+                if (index >= sentences.length) { resetReader(); return; }
+
+                currentSentenceIndex = index;
+                const originalSentence = sentences[index];
+                const cleanedSentenceForSpeech = cleanSentenceForSpeech(originalSentence);
+
+                if (!cleanedSentenceForSpeech.trim()) { speakFrom(index + 1); return; }
+
+                currentUtterance = new SpeechSynthesisUtterance(cleanedSentenceForSpeech);
+                const selectedVoiceName = voiceSelect.options[voiceSelect.selectedIndex]?.getAttribute('data-name');
+                if (selectedVoiceName) currentUtterance.voice = voices.find(v => v.name === selectedVoiceName);
+                currentUtterance.rate = parseFloat(rateSlider.value);
+
+                currentUtterance.onstart = () => {
+                    highlightSentence(index);
+                    setUIPaused(false);
+                    startProgressTimer();
+                };
+                currentUtterance.onend = () => speakFrom(index + 1);
+                currentUtterance.onerror = (e) => console.error('SpeechSynthesis Error:', e);
+                
+                synth.speak(currentUtterance);
+            }
+
+            function highlightSentence(index) {
+                document.querySelectorAll('#text-content span.highlight').forEach(el => el.classList.remove('highlight'));
+                const currentSpan = document.getElementById(`sentence-${index}`);
+                if (currentSpan) {
+                    currentSpan.classList.add('highlight');
+                    currentSpan.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+
+            function resetReader() {
+                clearInterval(progressInterval);
+                currentSentenceIndex = 0;
+                setUIPaused(true);
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+                document.querySelectorAll('#text-content span.highlight').forEach(el => el.classList.remove('highlight'));
+                progressBar.value = 0;
+                currentTimeEl.textContent = '00:00';
+            }
+
+            function setUIPaused(isPaused) {
+                if (isPaused) {
+                    playIcon.classList.remove('hidden'); pauseIcon.classList.add('hidden');
+                    clearInterval(progressInterval);
+                } else {
+                    playIcon.classList.add('hidden'); pauseIcon.classList.remove('hidden');
+                }
+            }
+
+            function startProgressTimer() {
+                clearInterval(progressInterval);
+                progressInterval = setInterval(() => {
+                    if (!synth.speaking || synth.paused) { clearInterval(progressInterval); return; }
+                    let charsSpoken = sentences.slice(0, currentSentenceIndex).reduce((acc, s) => acc + s.length, 0);
+                    const progress = (charsSpoken / fullText.length) * 100;
+                    progressBar.value = progress;
+                    currentTimeEl.textContent = formatTime((progress / 100) * estimatedDuration);
+                }, 500);
+            }
+            
+            function cleanSentenceForSpeech(text) {
+                let cleaned = text;
+                // Specifically remove academic citations like (Name et al., 2014; Name et al., 2016)
+                cleaned = cleaned.replace(/\([^)]*?et al\.[^)]*?\)/g, ' ');
+                // Remove content inside other parentheses and brackets
+                cleaned = cleaned.replace(/\{[^}]*\}|\[[^\]]*\]|\([^)]*\)/g, ' ');
+                cleaned = cleaned.replace(/[#*_{}\[\]()<>.,?!:;"]/g, '');
+                cleaned = cleaned.replace(/\s\s+/g, ' ').trim();
+                return cleaned;
+            }
+
+            function formatTime(seconds) {
+                const min = Math.floor(seconds / 60);
+                const sec = Math.floor(seconds % 60);
+                return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+            }
+
+            function findSentenceIndexFromProgress(progress) {
+                const targetChar = Math.floor((progress / 100) * fullText.length);
+                let charCount = 0;
+                for (let i = 0; i < sentences.length; i++) {
+                    charCount += sentences[i].length;
+                    if (charCount >= targetChar) {
+                        return i;
+                    }
+                }
+                return sentences.length - 1; // return last sentence if not found
+            }
+
+            function seek(seconds) {
+                if (!estimatedDuration) return;
+                const currentTime = (progressBar.value / 100) * estimatedDuration;
+                let newTime = currentTime + seconds;
+                
+                if (newTime < 0) newTime = 0;
+                if (newTime > estimatedDuration) newTime = estimatedDuration;
+
+                const newProgress = (newTime / estimatedDuration) * 100;
+                progressBar.value = newProgress;
+                currentTimeEl.textContent = formatTime(newTime);
+                
+                const newIndex = findSentenceIndexFromProgress(newProgress);
+                currentSentenceIndex = newIndex;
+
+                if (synth.speaking || synth.paused) {
+                    speakFrom(currentSentenceIndex);
+                }
+            }
+
+            playPauseBtn.addEventListener('click', () => {
+                if (synth.paused) { synth.resume(); setUIPaused(false); } 
+                else if (synth.speaking) { synth.pause(); setUIPaused(true); } 
+                else { speakFrom(currentSentenceIndex); }
+            });
+
+            stopBtn.addEventListener('click', () => { synth.cancel(); resetReader(); });
+            
+            rewind10Btn.addEventListener('click', () => seek(-10));
+            rewind30Btn.addEventListener('click', () => seek(-30));
+            forward10Btn.addEventListener('click', () => seek(10));
+            forward30Btn.addEventListener('click', () => seek(30));
+
+            rateSlider.addEventListener('input', (e) => {
+                const rate = parseFloat(e.target.value);
+                rateLabel.textContent = `${rate.toFixed(1)}x`;
+                if (synth.speaking && !synth.paused) {
+                    const currentRate = currentUtterance.rate;
+                    if (rate !== currentRate) {
+                         speakFrom(currentSentenceIndex);
+                    }
+                }
+            });
+
+            progressBar.addEventListener('input', (e) => {
+                const progress = parseInt(e.target.value, 10);
+                currentSentenceIndex = findSentenceIndexFromProgress(progress);
+                if (synth.speaking) speakFrom(currentSentenceIndex);
+            });
+            
+            // --- Lookup Popup Logic ---
+            textContentDiv.addEventListener('mouseup', (e) => {
+                const selection = window.getSelection();
+                const selectedText = selection.toString().trim();
+                if (selectedText.length > 0) {
+                    const range = selection.getRangeAt(0);
+                    const rect = range.getBoundingClientRect();
+                    
+                    lookupPopup.style.display = 'flex';
+                    lookupPopup.style.left = `${window.scrollX + rect.left + rect.width / 2 - lookupPopup.offsetWidth / 2}px`;
+                    lookupPopup.style.top = `${window.scrollY + rect.top - lookupPopup.offsetHeight - 10}px`;
+
+                    const encodedText = encodeURIComponent(selectedText);
+                    lookupGoogleTranslate.href = `https://translate.google.com/?sl=auto&tl=vi&text=${encodedText}&op=translate`;
+                    lookupGoogleSearch.href = `https://www.google.com/search?q=${encodedText}`;
+                    lookupVtudienEn.href = `https://vtudien.com/anh-viet/dictionary/nghia-cua-tu-${encodedText}`;
+                    lookupVtudienRu.href = `https://vtudien.com/nga-viet/dictionary/nghia-cua-tu-${encodedText}`;
+                    lookupVtudienZh.href = `https://vtudien.com/trung-viet/dictionary/nghia-cua-tu-${encodedText}`;
+
+                }
+            });
+
+            document.addEventListener('mousedown', (e) => {
+                if (!lookupPopup.contains(e.target) && !textContentDiv.contains(e.target)) {
+                    lookupPopup.style.display = 'none';
+                }
+            });
+
+            // --- Audio Download Logic ---
+            async function startRecording() {
+                try {
+                    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+                    const audioStream = new MediaStream(stream.getAudioTracks());
+                    
+                    mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' }); // Saving as mp3 for convenience
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = audioUrl;
+                        a.download = 'speech.mp3';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(audioUrl);
+                        // Stop screen sharing tracks
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+                    mediaRecorder.start();
+                    recordBtn.disabled = true;
+                    recordBtn.textContent = "Đang ghi..."
+                    downloadBtn.disabled = false;
+                    downloadBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                    downloadBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                } catch (err) {
+                    console.error("Error starting recording:", err);
+                    alert("Không thể bắt đầu ghi âm. Vui lòng đảm bảo bạn đã chọn chia sẻ âm thanh của tab.");
+                }
+            }
+
+            function stopRecording() {
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                }
+                recordBtn.disabled = false;
+                recordBtn.textContent = "1. Bắt đầu Ghi"
+                downloadBtn.disabled = true;
+                downloadBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                downloadBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+            }
+            
+            recordBtn.addEventListener('click', startRecording);
+            downloadBtn.addEventListener('click', stopRecording);
+
+        });
+    </script>
+</body>
+</html>
+
